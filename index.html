@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IELTS互動模擬測驗2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* 客製化滾動條以提升專業感 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .correct-answer { background-color: #dcfce7; border-color: #22c55e; }
+        .wrong-answer { background-color: #fee2e2; border-color: #ef4444; }
+        
+        /* 閱讀區域的左右分割 */
+        @media (min-width: 1024px) {
+            .split-view { display: flex; height: calc(100vh - 250px); }
+            .split-pane { flex: 1; overflow-y: auto; padding: 1.5rem; }
+            .split-pane:first-child { border-right: 2px solid #e2e8f0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans h-screen flex flex-col">
+
+    <header class="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center z-10 shrink-0">
+        <div>
+            <h1 class="text-xl font-bold tracking-wider">IELTS互動模擬測驗2</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div class="bg-blue-800 px-4 py-2 rounded-lg font-mono text-xl shadow-inner flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span id="timer">02:30:00</span>
+            </div>
+        </div>
+    </header>
+
+    <nav class="bg-white shadow-sm shrink-0 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <div class="flex space-x-8" aria-label="Tabs">
+                <button onclick="switchTab('listening')" id="tab-listening" class="tab-btn active border-blue-500 text-blue-600 border-b-2 py-4 px-1 text-center font-medium text-lg focus:outline-none transition">
+                    🎧 聽力 (30 mins)
+                </button>
+                <button onclick="switchTab('reading')" id="tab-reading" class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 py-4 px-1 text-center font-medium text-lg focus:outline-none transition">
+                    📖 閱讀 (60 mins)
+                </button>
+                <button onclick="switchTab('writing')" id="tab-writing" class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 py-4 px-1 text-center font-medium text-lg focus:outline-none transition">
+                    ✍️ 寫作 (60 mins)
+                </button>
+            </div>
+            <div class="flex items-center space-x-2 bg-gray-100 p-1 rounded-lg">
+                <button id="mode-academic" onclick="setMode('academic')" class="px-4 py-1.5 rounded-md bg-white shadow text-sm font-bold text-blue-800 transition">Academic (學術組)</button>
+                <button id="mode-general" onclick="setMode('general')" class="px-4 py-1.5 rounded-md text-sm font-bold text-gray-500 hover:text-gray-800 transition">General (移民組)</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="bg-indigo-50 border-b border-indigo-100 p-3 shrink-0 z-20 shadow-sm flex flex-wrap justify-center gap-4 items-center" id="student-info-bar">
+        <span class="font-bold text-indigo-900 text-lg">📝 考生資訊 (必填)：</span>
+        <input type="text" id="student-id" placeholder="學員編號" class="border border-indigo-200 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-32 md:w-48 shadow-inner transition-colors duration-300">
+        <input type="text" id="student-branch" placeholder="分校" class="border border-indigo-200 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-32 md:w-48 shadow-inner transition-colors duration-300">
+        <input type="text" id="student-name" placeholder="姓名" class="border border-indigo-200 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-32 md:w-48 shadow-inner transition-colors duration-300">
+    </div>
+
+    <main class="flex-1 overflow-hidden relative">
+        <div class="max-w-7xl mx-auto h-full">
+
+            <div id="content-listening" class="tab-content active h-full overflow-y-auto p-6">
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded shadow-sm">
+                    <h3 class="font-bold text-blue-900 text-lg mb-2">聽力測驗規格說明</h3>
+                    <ul class="list-disc pl-5 text-blue-800 space-y-1 text-sm">
+                        <li><strong>測驗時間：</strong>30分鐘</li>
+                        <li><strong>考題內容：</strong>共四大主題，共40題。(第一、二大題以生活語言為主；第三、四大題偏重學術性語言)</li>
+                    </ul>
+                </div>
+
+                <div id="listening-sections" class="space-y-8 pb-12">
+                    </div>
+            </div>
+
+            <div id="content-reading" class="tab-content h-full">
+                <div class="bg-blue-50 border-b border-blue-200 p-4 shrink-0 shadow-sm flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-blue-900 text-lg">閱讀測驗規格說明 (<span id="reading-mode-label">Academic</span>)</h3>
+                        <p id="reading-instruction-text" class="text-blue-800 text-sm mt-1"></p>
+                    </div>
+                </div>
+
+                <div class="split-view bg-white shadow-sm border-x border-b border-gray-200">
+                    <div class="split-pane bg-gray-50" id="reading-passage">
+                        </div>
+                    <div class="split-pane bg-white pb-12">
+                        <h3 class="text-2xl font-bold mb-6 text-blue-900 border-b-2 border-blue-100 pb-3">Questions (40 Items)</h3>
+                        <div id="reading-questions" class="space-y-8">
+                            </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-writing" class="tab-content h-full overflow-y-auto p-6">
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded shadow-sm">
+                    <h3 class="font-bold text-blue-900 text-lg mb-2">寫作測驗規格說明 (<span id="writing-mode-label">Academic</span>)</h3>
+                    <p id="writing-instruction-text" class="text-blue-800 text-sm"></p>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+                    <div class="flex justify-between items-start mb-4 border-b pb-4">
+                        <h2 class="text-2xl font-bold text-gray-900">Writing Task 1</h2>
+                        <span class="bg-gray-200 text-gray-800 px-4 py-1.5 rounded-full text-sm font-bold shadow-inner">Suggested time: 20 mins</span>
+                    </div>
+                    <div class="bg-gray-50 border border-gray-200 p-5 rounded-lg mb-6 shadow-sm">
+                        <p id="writing-task1-prompt" class="font-medium text-gray-800 text-lg leading-relaxed"></p>
+                        <div id="writing-task1-data-container" class="mt-6 bg-white border border-gray-300 p-4 rounded hidden">
+                            <p id="writing-task1-data-title" class="font-bold mb-2 text-gray-700 text-center text-lg">Data Visualization</p>
+                            <ul id="writing-task1-data" class="list-disc pl-5 space-y-1 text-gray-600 hidden"></ul>
+                            <div class="relative w-full h-80 flex justify-center">
+                                <canvas id="task1-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <textarea id="task1-input" class="w-full h-56 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-lg leading-relaxed shadow-inner" placeholder="Write your answer here (minimum 150 words)..."></textarea>
+                    <div class="flex justify-between items-center mt-3 mb-6">
+                        <span class="text-sm font-semibold text-gray-500 bg-gray-100 px-3 py-1 rounded">Word count: <span id="task1-word-count" class="text-blue-600">0</span></span>
+                    </div>
+
+                    <div id="task1-sample" class="hidden mt-4 p-6 bg-green-50 border-2 border-green-200 rounded-xl text-gray-800 leading-relaxed text-lg shadow-sm"></div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+                    <div class="flex justify-between items-start mb-4 border-b pb-4">
+                        <h2 class="text-2xl font-bold text-gray-900">Writing Task 2</h2>
+                        <span class="bg-gray-200 text-gray-800 px-4 py-1.5 rounded-full text-sm font-bold shadow-inner">Suggested time: 40 mins</span>
+                    </div>
+                    <div class="bg-gray-50 border border-gray-200 p-5 rounded-lg mb-6 shadow-sm">
+                        <p id="writing-task2-prompt" class="font-medium text-gray-800 text-lg leading-relaxed"></p>
+                    </div>
+                    
+                    <textarea id="task2-input" class="w-full h-72 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-lg leading-relaxed shadow-inner" placeholder="Write your essay here (minimum 250 words)..."></textarea>
+                    <div class="flex justify-between items-center mt-3 mb-6">
+                        <span class="text-sm font-semibold text-gray-500 bg-gray-100 px-3 py-1 rounded">Word count: <span id="task2-word-count" class="text-blue-600">0</span></span>
+                    </div>
+
+                    <div id="task2-sample" class="hidden mt-4 p-6 bg-green-50 border-2 border-green-200 rounded-xl text-gray-800 leading-relaxed text-lg shadow-sm"></div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-gray-200 flex flex-col items-center pb-12">
+                    <button id="submit-all-btn" onclick="gradeAll()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-12 rounded-lg shadow-lg transition duration-200 text-xl w-full max-w-lg tracking-wide">
+                        📝 提交全卷並查看成績
+                    </button>
+                    <div id="writing-score-display" class="hidden mt-6 text-left text-lg bg-blue-50 p-8 rounded-xl shadow-inner border border-blue-200 w-full"></div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <div id="final-submission-banner" class="fixed bottom-0 left-0 w-full bg-indigo-900 text-white p-4 shadow-2xl flex flex-col md:flex-row justify-between items-center z-50 border-t-4 border-yellow-400 transform transition-transform translate-y-full hidden">
+        <div class="flex flex-wrap items-center gap-4 md:gap-6 mb-4 md:mb-0">
+            <span class="text-xl font-bold text-yellow-300">🎉 測驗完成！你的成績：</span>
+            <span class="text-lg">聽力: <strong id="summary-l" class="text-blue-300">-</strong></span>
+            <span class="text-lg">閱讀: <strong id="summary-r" class="text-blue-300">-</strong></span>
+            <span class="text-lg">寫作: <strong id="summary-w" class="text-blue-300">-</strong></span>
+            <span class="text-2xl font-black text-green-400 ml-2 md:ml-4 border-l-2 border-indigo-700 pl-4">Overall: <span id="summary-overall">-</span></span>
+        </div>
+        <div class="flex items-center gap-4">
+            <span id="submit-msg" class="font-bold text-yellow-300 hidden"></span>
+            <button id="submit-formspree-btn" onclick="submitToFormspree()" class="bg-green-500 hover:bg-green-400 text-indigo-900 font-bold py-2 px-6 rounded-full shadow-lg transition duration-200 text-lg tracking-wide">
+                回傳成績 (必按)
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 記錄當前模式 (academic 或 general)
+        let currentMode = 'academic';
+        let timerInterval;
+        
+        // 全局紀錄成績
+        window.testScores = {
+            listening: 0.0,
+            reading: 0.0,
+            writing: 0.0,
+            overall: 0.0
+        };
+
+        /**
+         * 系統核心資料庫
+         */
+        const ieltsData = {
+            listening: {
+                sections: [
+                    {
+                        title: "Section 1: Everyday Life",
+                        instruction: "Questions 1-10: Listen to a telephone conversation between a customer and a train ticketing agent. Complete the form below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER.",
+                        transcript: `
+                            <strong>Agent:</strong> Good morning, National Rail Enquiries. This is Simon. How can I help you?<br>
+                            <strong>Customer:</strong> Hello, I'd like to book some train tickets to Edinburgh, please.<br>
+                            <strong>Agent:</strong> Certainly. What date will you be travelling?<br>
+                            <strong>Customer:</strong> I need to leave on the <strong>14th</strong> of November.<br>
+                            <strong>Agent:</strong> The 14th of November. And is it just a single ticket, or a return?<br>
+                            <strong>Customer:</strong> A <strong>return</strong> ticket, please. Coming back on the 18th.<br>
+                            <strong>Agent:</strong> Right. How many passengers will be travelling?<br>
+                            <strong>Customer:</strong> Just me, so <strong>1</strong> adult.<br>
+                            <strong>Agent:</strong> Okay. Do you have a railcard for any discounts?<br>
+                            <strong>Customer:</strong> Yes, I have a <strong>student</strong> railcard.<br>
+                            <strong>Agent:</strong> Excellent, that gives you a third off. Do you have a preference for a window or an aisle seat?<br>
+                            <strong>Customer:</strong> An <strong>aisle</strong> seat would be great, so I can stretch my legs.<br>
+                            <strong>Agent:</strong> Aisle seat selected. The total price after your discount is £<strong>65</strong>.<br>
+                            <strong>Customer:</strong> That's fine. <br>
+                            <strong>Agent:</strong> Could I have your surname to make the booking?<br>
+                            <strong>Customer:</strong> It's <strong>Morgan</strong>. M-O-R-G-A-N.<br>
+                            <strong>Agent:</strong> Thank you. And your email address to send the e-tickets?<br>
+                            <strong>Customer:</strong> It's p.morgan at <strong>web.com</strong>.<br>
+                            <strong>Agent:</strong> And a contact telephone number?<br>
+                            <strong>Customer:</strong> Yes, it's <strong>0745582911</strong>.<br>
+                            <strong>Agent:</strong> Got it. Finally, will you need any assistance with your luggage at the station?<br>
+                            <strong>Customer:</strong> No, but I will be bringing a <strong>bicycle</strong>. Do I need to book a space for it?<br>
+                            <strong>Agent:</strong> Yes, I will reserve a bike space for you free of charge. Your tickets will arrive in your email shortly.
+                        `,
+                        questions: [
+                            {
+                                type: 'fill', id: 'L_S1',
+                                text: 'Complete the booking form. (Q1 - Q10)',
+                                subQuestions: [
+                                    { id: 'L_S1_1', prefix: '1. Date of Departure: November', suffix: '', answer: '14th', explanation: '顧客說需要 "leave on the 14th of November"。' },
+                                    { id: 'L_S1_2', prefix: '2. Ticket Type (Single / Return):', suffix: '', answer: 'return', explanation: '顧客確認需要 "A return ticket, please"。' },
+                                    { id: 'L_S1_3', prefix: '3. Number of Passengers:', suffix: '', answer: '1', explanation: '顧客說 "Just me, so 1 adult"。' },
+                                    { id: 'L_S1_4', prefix: '4. Type of Railcard:', suffix: '', answer: 'student', explanation: '顧客表示持有 "student railcard"。' },
+                                    { id: 'L_S1_5', prefix: '5. Seat Preference:', suffix: '', answer: 'aisle', explanation: '顧客想要走道座位 "An aisle seat would be great"。' },
+                                    { id: 'L_S1_6', prefix: '6. Total Price: £', suffix: '', answer: '65', explanation: '折扣後的總價為 "£65"。' },
+                                    { id: 'L_S1_7', prefix: '7. Passenger Surname:', suffix: '', answer: 'morgan', explanation: '顧客拼出姓氏 M-O-R-G-A-N。' },
+                                    { id: 'L_S1_8', prefix: '8. Email: p.morgan @', suffix: '', answer: 'web.com', explanation: 'Email 後半段為 web.com。' },
+                                    { id: 'L_S1_9', prefix: '9. Phone Number:', suffix: '', answer: '0745582911', explanation: '電話為 0745582911。' },
+                                    { id: 'L_S1_10', prefix: '10. Item requiring reserved space:', suffix: '', answer: 'bicycle', explanation: '顧客會攜帶 "bicycle" (腳踏車) 並需要預訂空間。' }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        title: "Section 2: Everyday Monologue",
+                        instruction: "Questions 11-20: Listen to a guide giving a tour of a newly expanded city botanical garden. Answer the questions.",
+                        transcript: `
+                            <strong>Guide:</strong> Welcome, everyone, to the newly expanded City Botanical Garden. We're very proud of our recent upgrades. The primary goal of this expansion wasn't to attract more tourists, but rather to preserve endangered local plant species.<br>
+                            We have several new attractions. Our most impressive addition is the tropical greenhouse, which features plants from South America. As for our opening hours, we open at 8 AM every day, but please note that we now close earlier on Sundays, at 4 PM, to allow our staff to do maintenance. General admission is $10, but if you become a member, your entry is entirely free year-round. Also, don't miss our special event next month: a rare orchid exhibition.<br><br>
+                            Now, let's look at the map. The Rose Garden is located on the East side of the park, right next to the main entrance. The new Tropical Greenhouse is situated directly in the North section. If you need a rest, the Tea Room is located in the South area, overlooking the lake. The public Restrooms are right in the Centre of the park, next to the fountain. Finally, our Information Centre can be found on the West side, near the secondary exit.
+                        `,
+                        questions: [
+                            {
+                                type: 'mcq', id: 'L_S2_11',
+                                text: '11. What was the main goal of the botanical garden\'s expansion?',
+                                options: ['A) To attract more tourists', 'B) To build a new greenhouse', 'C) To preserve endangered plants'],
+                                answer: 'C',
+                                explanation: '導遊說擴建的首要目標是 "to preserve endangered local plant species"。'
+                            },
+                            {
+                                type: 'mcq', id: 'L_S2_12',
+                                text: '12. What is the most impressive new attraction?',
+                                options: ['A) The rose garden', 'B) The tropical greenhouse', 'C) The orchid exhibition'],
+                                answer: 'B',
+                                explanation: '導遊提到最令人印象深刻的是 "the tropical greenhouse"。'
+                            },
+                            {
+                                type: 'mcq', id: 'L_S2_13',
+                                text: '13. What is different about the opening hours on Sundays?',
+                                options: ['A) It opens later.', 'B) It is completely closed.', 'C) It closes earlier.'],
+                                answer: 'C',
+                                explanation: '導遊提醒 "we now close earlier on Sundays" (星期日提早關門)。'
+                            },
+                            {
+                                type: 'mcq', id: 'L_S2_14',
+                                text: '14. How much do garden members pay for admission?',
+                                options: ['A) $10', 'B) Nothing', 'C) Half price'],
+                                answer: 'B',
+                                explanation: '導遊說如果你成為會員 "your entry is entirely free year-round" (完全免費)。'
+                            },
+                            {
+                                type: 'mcq', id: 'L_S2_15',
+                                text: '15. What special event is taking place next month?',
+                                options: ['A) A photography contest', 'B) A rare orchid exhibition', 'C) A gardening workshop'],
+                                answer: 'B',
+                                explanation: '導遊提到下個月的特別活動是 "a rare orchid exhibition" (稀有蘭花展)。'
+                            },
+                            {
+                                type: 'matching', id: 'L_S2_16_20',
+                                text: 'Questions 16-20: Match each facility to its location on the map.',
+                                options: ['North', 'South', 'East', 'West', 'Centre'],
+                                subQuestions: [
+                                    { id: 'L_S2_16', text: '16. Rose Garden', answer: 'East', explanation: 'Rose Garden 位於公園的 East side。' },
+                                    { id: 'L_S2_17', text: '17. Tropical Greenhouse', answer: 'North', explanation: '熱帶溫室位於 North section。' },
+                                    { id: 'L_S2_18', text: '18. Tea Room', answer: 'South', explanation: '茶室位於 South area，俯瞰湖面。' },
+                                    { id: 'L_S2_19', text: '19. Restrooms', answer: 'Centre', explanation: '洗手間位於公園的 Centre。' },
+                                    { id: 'L_S2_20', text: '20. Information Centre', answer: 'West', explanation: '資訊中心位於 West side。' }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        title: "Section 3: Academic Discussion",
+                        instruction: "Questions 21-30: Read the transcript of two students, John and Lisa, discussing their engineering project on wind turbines with their tutor, Dr. Green. Answer the questions.",
+                        transcript: `
+                            <strong>John:</strong> Dr. Green, we've finalized the data for our wind power project. We compared offshore and onshore wind turbines. The most surprising challenge during our research wasn't finding the data, but analyzing the complex weather patterns.<br>
+                            <strong>Lisa:</strong> Yes, it took weeks. Initially, we thought offshore turbines would be far more expensive to maintain. However, our data showed that the real issue with offshore turbines is the saltwater corrosion, which damages the blades very quickly.<br>
+                            <strong>Dr. Green:</strong> That's a crucial point. And what about the onshore turbines?<br>
+                            <strong>John:</strong> Well, they are much cheaper to build. But the biggest complaint from local communities wasn't the noise, as we expected. It was the visual impact on the landscape.<br>
+                            <strong>Lisa:</strong> Exactly. Many people felt they ruined the natural beauty. <br>
+                            <strong>Dr. Green:</strong> Good insights. Let's talk about the final report structure.<br>
+                            <strong>John:</strong> I'm going to handle the technical specifications and draw the engineering diagrams.<br>
+                            <strong>Lisa:</strong> And I will write the environmental impact section and the executive summary. But I'm having trouble formatting the bibliography correctly.<br>
+                            <strong>Dr. Green:</strong> Use the university's online referencing tool; it saves a lot of time. For the presentation, make sure you highlight the potential of floating turbines. That's the future of the industry.
+                        `,
+                        questions: [
+                            {
+                                type: 'mcq', id: 'L_S3_21',
+                                text: '21. What was the most surprising challenge the students faced?',
+                                options: ['A) Finding offshore data', 'B) Analyzing weather patterns', 'C) Understanding the engineering'],
+                                answer: 'B',
+                                explanation: 'John 說最驚訝的挑戰是 "analyzing the complex weather patterns" (分析複雜的天氣型態)。'
+                            },
+                            {
+                                type: 'mcq', id: 'L_S3_22',
+                                text: '22. What is the main problem with offshore wind turbines?',
+                                options: ['A) They are too noisy.', 'B) Maintenance is expensive.', 'C) Saltwater damages the blades.'],
+                                answer: 'C',
+                                explanation: 'Lisa 說真正的問題是 "saltwater corrosion, which damages the blades" (鹽水腐蝕損壞葉片)。'
+                            },
+                            {
+                                type: 'mcq', id: 'L_S3_23',
+                                text: '23. What is the biggest local complaint about onshore turbines?',
+                                options: ['A) The visual impact', 'B) The loud noise', 'C) The danger to birds'],
+                                answer: 'A',
+                                explanation: 'John 指出最大的抱怨不是噪音，而是 "visual impact on the landscape" (對景觀的視覺影響)。'
+                            },
+                            {
+                                type: 'mcq', id: 'L_S3_24',
+                                text: '24. What specific part of the report will Lisa write?',
+                                options: ['A) Technical specifications', 'B) Environmental impact', 'C) Engineering diagrams'],
+                                answer: 'B',
+                                explanation: 'Lisa 說她會負責 "environmental impact section and the executive summary"。'
+                            },
+                            {
+                                type: 'mcq', id: 'L_S3_25',
+                                text: '25. What is Lisa currently struggling with?',
+                                options: ['A) Drawing charts', 'B) Writing the conclusion', 'C) Formatting the bibliography'],
+                                answer: 'C',
+                                explanation: 'Lisa 說 "I\'m having trouble formatting the bibliography correctly" (格式化參考書目有困難)。'
+                            },
+                            {
+                                type: 'matching', id: 'L_S3_26_30',
+                                text: 'Questions 26-30: Match the person to the statement or action.',
+                                options: ['Dr. Green', 'John', 'Lisa'],
+                                subQuestions: [
+                                    { id: 'L_S3_26', text: '26. Stated that people feel turbines ruin natural beauty.', answer: 'Lisa', explanation: 'Lisa 說: "Many people felt they ruined the natural beauty."' },
+                                    { id: 'L_S3_27', text: '27. Advised using an online referencing tool.', answer: 'Dr. Green', explanation: 'Dr. Green 建議: "Use the university\'s online referencing tool..."' },
+                                    { id: 'L_S3_28', text: '28. Will draw the engineering diagrams.', answer: 'John', explanation: 'John 說: "I\'m going to... draw the engineering diagrams."' },
+                                    { id: 'L_S3_29', text: '29. Expected offshore maintenance to be the main issue.', answer: 'Lisa', explanation: 'Lisa 提到: "Initially, we thought offshore turbines would be far more expensive to maintain."' },
+                                    { id: 'L_S3_30', text: '30. Wants the presentation to highlight floating turbines.', answer: 'Dr. Green', explanation: 'Dr. Green 提醒: "make sure you highlight the potential of floating turbines."' }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        title: "Section 4: Academic Lecture",
+                        instruction: "Questions 31-40: Complete the notes below based on a university lecture about the history of photography. Write ONE WORD ONLY for each answer.",
+                        transcript: `
+                            <strong>Professor:</strong> Good morning. Today we are looking at the evolution of photography, a medium that completely changed how we document history. <br>
+                            The concept began long before actual cameras, with a device called the camera obscura. This was basically a dark <strong>room</strong> with a small hole that projected an inverted image onto the opposite wall. It was mainly used by <strong>artists</strong> as a drawing aid during the Renaissance.<br>
+                            The first permanent photograph was created in 1826 by a French inventor named Joseph Niépce. His method required an exposure time of eight <strong>hours</strong>, making it impossible to photograph people or moving objects.<br>
+                            In 1839, Louis Daguerre introduced the Daguerreotype. This drastically reduced exposure time to just a few minutes. However, the process was dangerous because it relied on toxic <strong>chemicals</strong> like mercury vapor to develop the image on a copper plate.<br>
+                            Photography became accessible to the masses in 1888 when George Eastman introduced the Kodak camera. It was pre-loaded with a flexible roll of <strong>film</strong>. Customers simply took the photos and sent the whole camera back to the factory for processing. His famous slogan was "You press the <strong>button</strong>, we do the rest."<br>
+                            The 20th century saw the rise of photojournalism, allowing the public to see the brutal reality of <strong>war</strong> for the first time. Finally, the shift to digital photography in the late 1990s revolutionized the industry again. It eliminated the need for physical processing and allowed for instant <strong>sharing</strong> across the globe. Today, the primary device used for photography is not a traditional camera, but the <strong>smartphone</strong>, making everyone a potential photographer and changing the nature of personal <strong>privacy</strong>.
+                        `,
+                        questions: [
+                            {
+                                type: 'fill', id: 'L_S4',
+                                text: 'Complete the notes below. Write ONE WORD ONLY for each answer.',
+                                subQuestions: [
+                                    { id: 'L_S4_31', prefix: '31. The camera obscura was originally a dark', suffix: '.', answer: 'room', explanation: '教授提到 This was basically a dark room...。' },
+                                    { id: 'L_S4_32', prefix: '32. It was primarily used as a tool for', suffix: 'during the Renaissance.', answer: 'artists', explanation: '主要被 "artists" (藝術家) 作為繪畫輔助工具。' },
+                                    { id: 'L_S4_33', prefix: '33. The first permanent photo took eight', suffix: 'to expose.', answer: 'hours', explanation: '曝光時間需要八個 "hours" (小時)。' },
+                                    { id: 'L_S4_34', prefix: '34. The Daguerreotype process was dangerous due to the use of toxic', suffix: '.', answer: 'chemicals', explanation: '因為使用了有毒的 "chemicals" (化學物質) 如汞蒸氣。' },
+                                    { id: 'L_S4_35', prefix: '35. The Kodak camera used a flexible roll of', suffix: 'instead of plates.', answer: 'film', explanation: '預裝了有彈性的 "film" (底片) 捲。' },
+                                    { id: 'L_S4_36', prefix: '36. Kodak\'s slogan was "You press the', suffix: ', we do the rest."', answer: 'button', explanation: '著名口號是 "You press the button..." (你按按鈕，剩下的交給我們)。' },
+                                    { id: 'L_S4_37', prefix: '37. Photojournalism showed the public the reality of', suffix: '.', answer: 'war', explanation: '讓大眾首次看到 "war" (戰爭) 的殘酷現實。' },
+                                    { id: 'L_S4_38', prefix: '38. Digital cameras allowed for the instant', suffix: 'of images globally.', answer: 'sharing', explanation: '數位攝影允許即時的 "sharing" (分享)。' },
+                                    { id: 'L_S4_39', prefix: '39. Currently, the most common photography device is the', suffix: '.', answer: 'smartphone', explanation: '現今主要的攝影設備是 "smartphone" (智慧型手機)。' },
+                                    { id: 'L_S4_40', prefix: '40. This widespread photography has impacted personal', suffix: '.', answer: 'privacy', explanation: '這改變了個人 "privacy" (隱私) 的本質。' }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            reading: {
+                academic: {
+                    instruction: "測驗時間：60分鐘。共3篇文章，共 40 題。本區為 Academic 學術組模擬題庫。",
+                    passages: [
+                        {
+                            title: "Passage 1: The History and Science of Glassmaking",
+                            passage: `
+                                <p class="mb-4">Glass is an extraordinary material that has profoundly shaped human civilization. Unlike crystalline solids, which have a highly ordered atomic structure, glass is an amorphous solid. This means its atoms are arranged in a disorganized manner, much like a liquid, yet it possesses the mechanical rigidity of a solid. This unique state is achieved by rapidly cooling molten materials—primarily silica (sand)—before their atoms can align into a regular crystal lattice.</p>
+                                <p class="mb-4">The earliest known instances of glass usage date back to the Stone Age, where naturally occurring volcanic glass, known as obsidian, was highly prized for making sharp cutting tools and weapons. The actual manufacturing of synthetic glass, however, is believed to have originated in Mesopotamia and ancient Egypt around 3500 BC. These early glassmakers discovered that by heating common sand mixed with soda ash (to lower the melting point) and limestone (to stabilize the mixture), they could create a moldable, transparent substance. Initially, glass was extremely rare and valuable, used exclusively for creating small luxury items like beads and decorative vessels for royalty.</p>
+                                <p class="mb-4">A monumental revolution in glassmaking occurred around the 1st century BC with the invention of glassblowing by Syrian craftsmen. By blowing air through a hollow iron tube into a blob of molten glass, artisans could rapidly mass-produce hollow vessels of various shapes and sizes. This innovation transformed glass from a rare luxury into an everyday domestic commodity. Later, during the Roman Empire, glass windows were introduced, though they were thick, highly distorted, and mostly used in important public buildings rather than ordinary homes.</p>
+                            `,
+                            questions: [
+                                {
+                                    type: 'tfng', id: 'RA_P1_TF', text: 'Questions 1-7: Do the following statements agree with the information given? (TRUE / FALSE / NOT GIVEN)',
+                                    subQuestions: [
+                                        { id: 'RA_1', text: '1. Glass has a highly ordered and regular atomic structure.', answer: 'FALSE', explanation: '第一段明確指出 glass is an amorphous solid... its atoms are arranged in a disorganized manner (結構無序)。' },
+                                        { id: 'RA_2', text: '2. Glass is formed by cooling melted materials very slowly.', answer: 'FALSE', explanation: '第一段指出是 rapidly cooling (快速冷卻)。' },
+                                        { id: 'RA_3', text: '3. Obsidian is a type of glass that occurs naturally in volcanoes.', answer: 'TRUE', explanation: '第二段提到 naturally occurring volcanic glass, known as obsidian。' },
+                                        { id: 'RA_4', text: '4. The Egyptians kept their glassmaking techniques a secret from other nations.', answer: 'NOT GIVEN', explanation: '文章提到埃及開始製造玻璃，但未提及是否保密。' },
+                                        { id: 'RA_5', text: '5. Soda ash was added to the sand to make the glass more transparent.', answer: 'FALSE', explanation: '第二段說明加入 soda ash 是為了 to lower the melting point (降低熔點)。' },
+                                        { id: 'RA_6', text: '6. The invention of glassblowing made glass products cheaper and more common.', answer: 'TRUE', explanation: '第三段指出這讓玻璃從 rare luxury 變成 everyday domestic commodity。' },
+                                        { id: 'RA_7', text: '7. Ordinary Roman citizens commonly had glass windows in their houses.', answer: 'FALSE', explanation: '第三段結尾指出羅馬時期的窗戶 mostly used in important public buildings rather than ordinary homes。' }
+                                    ]
+                                },
+                                {
+                                    type: 'fill', id: 'RA_P1_FILL', text: 'Questions 8-13: Complete the summary below. Choose ONE WORD ONLY from the passage.',
+                                    subQuestions: [
+                                        { id: 'RA_8', prefix: '8. Glass is classified scientifically as an', suffix: 'solid.', answer: 'amorphous', explanation: '第一段：glass is an amorphous solid.' },
+                                        { id: 'RA_9', prefix: '9. Stone Age humans used obsidian to create sharp', suffix: '.', answer: 'tools', explanation: '第二段：prized for making sharp cutting tools (武器也可，但系統抓 tools)。' },
+                                        { id: 'RA_10', prefix: '10. Early synthetic glass required sand, soda ash, and', suffix: '.', answer: 'limestone', explanation: '第二段：sand mixed with soda ash... and limestone。' },
+                                        { id: 'RA_11', prefix: '11. Glassblowing was invented by craftsmen from', suffix: '.', answer: 'syrian', explanation: '第三段：invention of glassblowing by Syrian craftsmen' },
+                                        { id: 'RA_12', prefix: '12. Glassblowers forced air through an iron', suffix: 'to shape the glass.', answer: 'tube', explanation: '第三段：blowing air through a hollow iron tube。' },
+                                        { id: 'RA_13', prefix: '13. Early Roman windows were thick and visually', suffix: '.', answer: 'distorted', explanation: '第三段：they were thick, highly distorted。' }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            title: "Passage 2: The Impact of Urban Noise on Bird Songs",
+                            passage: `
+                                <p class="mb-4">As urban areas continue to expand globally, wildlife is forced to adapt to increasingly human-dominated environments. One of the most insidious, yet invisible, forms of pollution affecting urban wildlife is anthropogenic (human-made) noise. For bird species, which rely heavily on acoustic communication for survival, the constant drone of traffic, construction, and machinery poses a significant existential threat. Acoustic communication in birds is crucial for two primary reasons: defending territory from rivals and attracting potential mates.</p>
+                                <p class="mb-4">Recent ornithological studies have revealed that several bird species are altering their songs to be heard over the low-frequency rumble of city noise. The Great Tit (Parus major), a common European songbird, provides a striking example. Researchers found that Great Tits living in noisy urban centers sing at a significantly higher minimum pitch compared to their counterparts in quiet rural forests. Because city noise is predominantly low-frequency, singing at a higher pitch prevents the birds' acoustic signals from being masked or "drowned out" by the urban roar. Some species also sing louder (a phenomenon known as the Lombard effect) or shift their singing times to the early morning before peak traffic begins.</p>
+                                <p class="mb-4">While this vocal flexibility demonstrates impressive behavioral adaptation, it may come at a hidden biological cost. Female birds generally prefer males with lower-pitched, more complex songs, as these traits indicate physical fitness and high genetic quality. By singing at a higher pitch to overcome city noise, urban males might inadvertently make themselves less attractive to females, potentially leading to lower reproductive success. Furthermore, the energy required to sing louder can exhaust the birds, reducing their lifespan. Therefore, while acoustic adaptation allows birds to survive in the short term, urban noise pollution could threaten the long-term viability of certain bird populations.</p>
+                            `,
+                            questions: [
+                                {
+                                    type: 'mcq', id: 'RA_P2_MCQ', text: 'Questions 14-20: Choose the correct letter, A, B, or C.',
+                                    subQuestions: [
+                                        { id: 'RA_14', text: '14. According to paragraph 1, what is anthropogenic noise?', options: ['A) Noise made by animals', 'B) Noise made by humans', 'C) Noise made by the weather'], answer: 'B', explanation: '第一段括號內解釋 anthropogenic (human-made) noise。' },
+                                        { id: 'RA_15', text: '15. Why is singing crucial for birds?', options: ['A) To find food and water', 'B) To defend territory and attract mates', 'C) To warn others about weather changes'], answer: 'B', explanation: '第一段結尾指出 crucial for two primary reasons: defending territory from rivals and attracting potential mates。' },
+                                        { id: 'RA_16', text: '16. How does the song of a city Great Tit differ from a rural one?', options: ['A) It is much shorter.', 'B) It is sung at a higher pitch.', 'C) It is completely silent.'], answer: 'B', explanation: '第二段提到 sing at a significantly higher minimum pitch。' },
+                                        { id: 'RA_17', text: '17. Why do urban birds sing at a higher pitch?', options: ['A) Because they are smaller', 'B) To avoid being masked by low-frequency traffic noise', 'C) Because female birds prefer it'], answer: 'B', explanation: '第二段說明 prevents the birds\' acoustic signals from being masked... by the urban roar。' },
+                                        { id: 'RA_18', text: '18. What is the "Lombard effect"?', options: ['A) Singing louder in noisy environments', 'B) Changing the time of singing', 'C) Losing the ability to sing'], answer: 'A', explanation: '第二段提到 sing louder (a phenomenon known as the Lombard effect)。' },
+                                        { id: 'RA_19', text: '19. What type of song do female birds naturally prefer?', options: ['A) High-pitched and simple', 'B) Low-pitched and complex', 'C) Very loud songs'], answer: 'B', explanation: '第三段指出 Female birds generally prefer males with lower-pitched, more complex songs。' },
+                                        { id: 'RA_20', text: '20. What is a potential negative consequence of birds singing louder?', options: ['A) They become deaf.', 'B) They attract predators.', 'C) They become physically exhausted.'], answer: 'C', explanation: '第三段提到 the energy required to sing louder can exhaust the birds。' }
+                                    ]
+                                },
+                                {
+                                    type: 'fill', id: 'RA_P2_FILL', text: 'Questions 21-27: Complete the sentences below with ONE WORD ONLY from Passage 2.',
+                                    subQuestions: [
+                                        { id: 'RA_21', prefix: '21. Human-made noise is an invisible form of', suffix: 'in cities.', answer: 'pollution', explanation: '第一段：invisible, forms of pollution' },
+                                        { id: 'RA_22', prefix: '22. Birds use acoustic signals to defend their', suffix: 'from rivals.', answer: 'territory', explanation: '第一段：defending territory from rivals' },
+                                        { id: 'RA_23', prefix: '23. Urban noise is predominantly', suffix: '-frequency.', answer: 'low', explanation: '第二段：city noise is predominantly low-frequency' },
+                                        { id: 'RA_24', prefix: '24. Some birds change their singing times to the early', suffix: '.', answer: 'morning', explanation: '第二段：shift their singing times to the early morning' },
+                                        { id: 'RA_25', prefix: '25. Changing their song shows impressive behavioral', suffix: '.', answer: 'adaptation', explanation: '第三段：demonstrates impressive behavioral adaptation' },
+                                        { id: 'RA_26', prefix: '26. Low-pitched songs show that a male bird has good physical', suffix: '.', answer: 'fitness', explanation: '第三段：these traits indicate physical fitness' },
+                                        { id: 'RA_27', prefix: '27. Singing higher might result in lower reproductive', suffix: 'for city birds.', answer: 'success', explanation: '第三段：leading to lower reproductive success' }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            title: "Passage 3: The Psychology of False Memories",
+                            passage: `
+                                <p class="mb-4">Human memory is commonly compared to a video camera, faithfully recording and storing events exactly as they occur. However, decades of cognitive psychology research have proven this metaphor to be entirely inaccurate. Memory is not a passive recording device but an active, reconstructive process. Every time we recall an event, our brain pieces together fragments of information, filling in gaps with logic, expectations, and external suggestions. This reconstructive nature makes human memory highly susceptible to distortion, leading to the creation of "false memories"—recollections of events that never actually happened or happened differently than remembered.</p>
+                                <p class="mb-4">One of the pioneers in this field is psychologist Elizabeth Loftus. In her groundbreaking "Lost in the Mall" study, researchers presented participants with four short narratives about their childhood, provided by family members. Three were true, but one was entirely fabricated: a story about the participant getting lost in a shopping mall at age five and being rescued by an elderly person. Remarkably, about 25% of the participants not only "remembered" the fake event but also provided vivid, sensory details about it, such as the color of the old person's shirt. This demonstrated how easily external misinformation can be internalized as a genuine personal memory.</p>
+                                <p class="mb-4">The implications of false memories are profound, particularly in the legal system. Eyewitness testimony has historically been considered the gold standard of evidence in criminal trials. However, the discovery that memories can be contaminated by leading questions during police interrogations has led to thousands of wrongful convictions being overturned. For instance, asking a witness "How fast were the cars going when they smashed into each other?" results in higher speed estimates and false memories of broken glass compared to using the neutral word "hit." Understanding the fragility of memory is crucial for ensuring justice and improving investigative protocols.</p>
+                            `,
+                            questions: [
+                                {
+                                    type: 'tfng', id: 'RA_P3_TF', text: 'Questions 28-34: Do the following statements agree with the claims of the writer? (YES / NO / NOT GIVEN)',
+                                    subQuestions: [
+                                        { id: 'RA_28', text: '28. The video camera metaphor is a highly accurate way to describe human memory.', answer: 'NO', explanation: '第一段指出 this metaphor to be entirely inaccurate (完全不準確)。' },
+                                        { id: 'RA_29', text: '29. When we remember something, our brain actively rebuilds the event.', answer: 'YES', explanation: '第一段說明 Memory is... an active, reconstructive process。' },
+                                        { id: 'RA_30', text: '30. False memories only occur in people with diagnosed mental illnesses.', answer: 'NOT GIVEN', explanation: '文章未提及虛假記憶只發生在精神疾病患者身上，反而強調這是人類記憶的普遍特性。' },
+                                        { id: 'RA_31', text: '31. In Loftus\'s study, family members helped create the false narrative about the mall.', answer: 'NO', explanation: '第二段指出故事是 provided by family members，但假故事是研究人員編造(entirely fabricated)的，並未說家人幫忙編造假故事。' },
+                                        { id: 'RA_32', text: '32. Participants in the mall study invented specific visual details about the fake event.', answer: 'YES', explanation: '第二段提到 provided vivid, sensory details about it, such as the color of the old person\'s shirt。' },
+                                        { id: 'RA_33', text: '33. Eyewitness testimony is completely banned in modern criminal trials.', answer: 'NOT GIVEN', explanation: '文章說它 historically been considered the gold standard，並導致錯判，但沒說現在被完全禁止。' },
+                                        { id: 'RA_34', text: '34. Using the word "smashed" instead of "hit" alters a witness\'s memory of an accident.', answer: 'YES', explanation: '第三段舉例 using the word "smashed"... results in higher speed estimates and false memories。' }
+                                    ]
+                                },
+                                {
+                                    type: 'matching', id: 'RA_P3_MATCH', text: 'Questions 35-40: Match the concept (35-40) to its related description from the passage.',
+                                    options: ['Reconstructive process', 'Elizabeth Loftus', 'Lost in the Mall study', 'Eyewitness testimony', 'Leading questions'],
+                                    subQuestions: [
+                                        { id: 'RA_35', text: '35. The researcher who proved how easily false memories can be implanted.', answer: 'Elizabeth Loftus', explanation: '第二段介紹先驅 psychologist Elizabeth Loftus。' },
+                                        { id: 'RA_36', text: '36. The mechanism by which the brain pieces together fragments of past events.', answer: 'Reconstructive process', explanation: '第一段定義 Memory is not a passive recording device but an active, reconstructive process。' },
+                                        { id: 'RA_37', text: '37. An experiment where 25% of people remembered a fake childhood event.', answer: 'Lost in the Mall study', explanation: '第二段描述 "Lost in the Mall" study 的結果。' },
+                                        { id: 'RA_38', text: '38. This has historically been considered the strongest form of evidence in court.', answer: 'Eyewitness testimony', explanation: '第三段提到 Eyewitness testimony has historically been considered the gold standard of evidence。' },
+                                        { id: 'RA_39', text: '39. Asking "How fast were they going when they smashed?" is an example of this.', answer: 'Leading questions', explanation: '第三段說明 contaminated by leading questions... For instance, asking a witness "How fast..."' },
+                                        { id: 'RA_40', text: '40. This relies on the brain filling in gaps with logic and expectations.', answer: 'Reconstructive process', explanation: '第一段提到 reconstructive process... filling in gaps with logic, expectations...。' }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                general: {
+                    instruction: "測驗時間：60分鐘。共3大章節，共 40 題。本區為 General 移民組模擬題庫，涵蓋生活與職場情境。",
+                    passages: [
+                        {
+                            title: "Section 1: Public Library Rules & Train Timetable",
+                            passage: `
+                                <p class="mb-4"><strong>Part A: Central Library Rules for Patrons</strong><br>Welcome to the Central Library. To maintain a quiet environment, mobile phones must be set to silent mode upon entry. Phone conversations are only permitted in the designated foyer area. Eating hot food is strictly banned inside the library, but cold snacks and drinks with lids are allowed in the study lounges. Patrons can borrow a maximum of 10 books at a time for a period of 21 days. Late returns incur a fine of $0.50 per book per day.</p>
+                                <p class="mb-4"><strong>Part B: Commuter Train to Riverside Station</strong><br>Trains depart from Platform 3 every 30 minutes from 6:00 AM to 10:00 PM. A standard single ticket costs $6.00, while a daily unlimited pass is $14.00. Bicycles are permitted on the trains free of charge, but only during off-peak hours (between 10:00 AM and 3:00 PM). Passengers must ensure their bikes are stored in the marked carriage at the rear of the train. Tickets can be purchased at the automated machines on the platform using a credit card; machines do not accept cash.</p>
+                            `,
+                            questions: [
+                                {
+                                    type: 'tfng', id: 'RG_S1_TF', text: 'Questions 1-8: Do the statements agree with the text? (TRUE / FALSE / NOT GIVEN)',
+                                    subQuestions: [
+                                        { id: 'RG_1', text: '1. You must turn off your mobile phone completely when entering the library.', answer: 'FALSE', explanation: 'Part A 說 must be set to silent mode (靜音模式)，非完全關機。' },
+                                        { id: 'RG_2', text: '2. You can talk on your phone in the library foyer.', answer: 'TRUE', explanation: 'Part A 說 conversations are only permitted in the designated foyer area。' },
+                                        { id: 'RG_3', text: '3. Drinking hot coffee without a lid is allowed in the study lounge.', answer: 'FALSE', explanation: 'Part A 規定 drinks with lids are allowed (飲料必須有蓋子)。' },
+                                        { id: 'RG_4', text: '4. You can keep borrowed books for three weeks before paying a fine.', answer: 'TRUE', explanation: '21 days 剛好是三週。' },
+                                        { id: 'RG_5', text: '5. The train to Riverside Station leaves from Platform 4.', answer: 'FALSE', explanation: 'Part B 說 Trains depart from Platform 3。' },
+                                        { id: 'RG_6', text: '6. It is cheaper to buy a daily pass if you are making three separate journeys.', answer: 'TRUE', explanation: '單程 $6，三趟 $18，一日票 $14，所以買一日票較便宜。' },
+                                        { id: 'RG_7', text: '7. You must pay an extra fee to take your bicycle on the train.', answer: 'FALSE', explanation: 'Part B 說 Bicycles are permitted... free of charge。' },
+                                        { id: 'RG_8', text: '8. The ticket machines accept both coins and banknotes.', answer: 'FALSE', explanation: 'Part B 說 machines do not accept cash (不收現金)。' }
+                                    ]
+                                },
+                                {
+                                    type: 'fill', id: 'RG_S1_FILL', text: 'Questions 9-14: Complete the sentences with ONE WORD from the text.',
+                                    subQuestions: [
+                                        { id: 'RG_9', prefix: '9. Eating', suffix: 'food is not allowed inside the library.', answer: 'hot', explanation: 'Eating hot food is strictly banned' },
+                                        { id: 'RG_10', prefix: '10. The library fine is $0.50 per', suffix: 'per day.', answer: 'book', explanation: 'a fine of $0.50 per book per day' },
+                                        { id: 'RG_11', prefix: '11. The commuter train stops running at 10:00', suffix: '.', answer: 'pm', explanation: 'from 6:00 AM to 10:00 PM' },
+                                        { id: 'RG_12', prefix: '12. Bicycles are only allowed during off-', suffix: 'hours.', answer: 'peak', explanation: 'only during off-peak hours' },
+                                        { id: 'RG_13', prefix: '13. Store bikes in the', suffix: 'carriage of the train.', answer: 'rear', explanation: 'in the marked carriage at the rear' },
+                                        { id: 'RG_14', prefix: '14. Ticket machines on the', suffix: 'only accept credit cards.', answer: 'platform', explanation: 'automated machines on the platform' }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            title: "Section 2: Workplace Health & Conference Registration",
+                            passage: `
+                                <p class="mb-4"><strong>Reporting a Workplace Injury</strong><br>Employee safety is our priority. If you sustain an injury at work, no matter how minor, you must report it immediately to your shift supervisor. Within 24 hours of the incident, you must also complete an 'Incident Report Form', available on the HR intranet. If the injury requires medical attention, the company will cover the cost of your visit to the approved medical clinic located on 5th Avenue. Do not visit your personal doctor for the initial assessment, or the costs will not be reimbursed.</p>
+                                <p class="mb-4"><strong>Annual Tech Innovation Conference</strong><br>The company is sponsoring 10 employees to attend the Tech Innovation Conference in Chicago next month. To apply for a sponsored ticket, submit a 200-word statement explaining how attending will benefit your current project. Submissions must be emailed to the training coordinator by Friday. Successful applicants will be notified next Wednesday. Note that while the company covers flights and conference tickets, employees are responsible for their own evening meals and local taxi fares.</p>
+                            `,
+                            questions: [
+                                {
+                                    type: 'matching', id: 'RG_S2_MATCH', text: 'Questions 15-20: Match the statement to the correct category.',
+                                    options: ['Workplace Injury', 'Conference Registration'],
+                                    subQuestions: [
+                                        { id: 'RG_15', text: '15. Must be reported to a supervisor immediately.', answer: 'Workplace Injury', explanation: '受傷需 report it immediately to your shift supervisor。' },
+                                        { id: 'RG_16', text: '16. Requires writing a 200-word statement.', answer: 'Conference Registration', explanation: '研討會申請需 submit a 200-word statement。' },
+                                        { id: 'RG_17', text: '17. The company will not pay for evening meals.', answer: 'Conference Registration', explanation: '研討會規定 employees are responsible for their own evening meals。' },
+                                        { id: 'RG_18', text: '18. Forms must be completed within 24 hours.', answer: 'Workplace Injury', explanation: '受傷後 Within 24 hours... complete an Incident Report Form。' },
+                                        { id: 'RG_19', text: '19. Do not use your personal doctor for this.', answer: 'Workplace Injury', explanation: '受傷規定 Do not visit your personal doctor for the initial assessment。' },
+                                        { id: 'RG_20', text: '20. Winners will be announced next Wednesday.', answer: 'Conference Registration', explanation: '研討會規定 Successful applicants will be notified next Wednesday。' }
+                                    ]
+                                },
+                                {
+                                    type: 'fill', id: 'RG_S2_FILL', text: 'Questions 21-27: Complete the sentences with ONE WORD ONLY.',
+                                    subQuestions: [
+                                        { id: 'RG_21', prefix: '21. Report all injuries to your', suffix: 'supervisor.', answer: 'shift', explanation: 'your shift supervisor' },
+                                        { id: 'RG_22', prefix: '22. The Incident Report Form is on the HR', suffix: '.', answer: 'intranet', explanation: 'available on the HR intranet' },
+                                        { id: 'RG_23', prefix: '23. The approved medical', suffix: 'is on 5th Avenue.', answer: 'clinic', explanation: 'the approved medical clinic located on 5th Avenue' },
+                                        { id: 'RG_24', prefix: '24. The company is offering a', suffix: 'ticket to 10 employees.', answer: 'sponsored', explanation: 'To apply for a sponsored ticket' },
+                                        { id: 'RG_25', prefix: '25. Email your application to the training', suffix: '.', answer: 'coordinator', explanation: 'emailed to the training coordinator' },
+                                        { id: 'RG_26', prefix: '26. The company will pay for your', suffix: 'and the conference entry.', answer: 'flights', explanation: 'the company covers flights and conference tickets' },
+                                        { id: 'RG_27', prefix: '27. You must pay for your own local', suffix: 'fares.', answer: 'taxi', explanation: 'local taxi fares' }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            title: "Section 3: The Accidental Invention of the Sticky Note",
+                            passage: `
+                                <p class="mb-4">The Post-it Note, a ubiquitous office supply found on desks worldwide, was the result of a scientific failure. In 1968, Dr. Spencer Silver, a chemist at the 3M company, was attempting to develop a super-strong adhesive for the aerospace industry. Instead, he accidentally created a "low-tack" adhesive. It was remarkably weak; it would stick to surfaces but could be easily peeled off without leaving any residue, and it could be reused multiple times. At the time, 3M management saw no practical application for a weak glue, and Silver's invention was shelved for five years.</p>
+                                <p class="mb-4">The breakthrough came in 1974 thanks to another 3M scientist, Arthur Fry. Fry sang in his church choir and was constantly frustrated by his paper bookmarks falling out of his hymnal. Remembering Silver's seminar about the weak adhesive, Fry realized it was the perfect solution. He coated a piece of paper with the glue and found it stayed securely in his book but peeled off without tearing the delicate pages. He called it a "temporarily permanent" bookmark.</p>
+                                <p class="mb-4">Fry began distributing his new bookmarks to colleagues at 3M. To his surprise, they didn't just use them in books; they started using them to leave quick messages on desks and documents. Realizing the product was fundamentally a communication tool rather than just a bookmark, 3M launched the product nationally in 1980. The iconic canary yellow color was also a fortunate accident; the lab next door only had yellow scrap paper available when they first started testing the notes. Today, billions of Post-it Notes are sold annually in over 100 countries.</p>
+                            `,
+                            questions: [
+                                {
+                                    type: 'mcq', id: 'RG_S3_MCQ', text: 'Questions 28-34: Choose the correct letter A, B or C.',
+                                    subQuestions: [
+                                        { id: 'RG_28', text: '28. What was Dr. Spencer Silver originally trying to create in 1968?', options: ['A) A new type of paper', 'B) A super-strong glue', 'C) A bookmark'], answer: 'B', explanation: '第一段說明 he was attempting to develop a super-strong adhesive (adhesive 即膠水/黏合劑)。' },
+                                        { id: 'RG_29', text: '29. What was the main characteristic of the adhesive Silver invented?', options: ['A) It dried very quickly.', 'B) It was low-tack and easily removable.', 'C) It ruined paper surfaces.'], answer: 'B', explanation: '第一段指出 he accidentally created a "low-tack" adhesive... easily peeled off without leaving any residue。' },
+                                        { id: 'RG_30', text: '30. Why did 3M initially shelve Silver\'s invention?', options: ['A) They thought a weak glue was useless.', 'B) It was too expensive to make.', 'C) It was highly toxic.'], answer: 'A', explanation: '第一段說明 3M management saw no practical application for a weak glue。' },
+                                        { id: 'RG_31', text: '31. What problem was Arthur Fry trying to solve when he remembered the glue?', options: ['A) He needed to stick posters on a wall.', 'B) His paper bookmarks kept falling out.', 'C) He lost his voice in the choir.'], answer: 'B', explanation: '第二段解釋 Fry was constantly frustrated by his paper bookmarks falling out of his hymnal。' },
+                                        { id: 'RG_32', text: '32. What did 3M colleagues primarily use the sticky paper for?', options: ['A) Marking pages in books', 'B) Leaving quick messages', 'C) Wrapping small gifts'], answer: 'B', explanation: '第三段提到 they didn\'t just use them in books; they started using them to leave quick messages。' },
+                                        { id: 'RG_33', text: '33. When was the product finally launched nationally?', options: ['A) 1968', 'B) 1974', 'C) 1980'], answer: 'C', explanation: '第三段指出 3M launched the product nationally in 1980。' },
+                                        { id: 'RG_34', text: '34. Why were the first Post-it Notes yellow?', options: ['A) Yellow is easy to see.', 'B) It was the only scrap paper available in the lab.', 'C) Arthur Fry liked the color yellow.'], answer: 'B', explanation: '第三段結尾提到 the lab next door only had yellow scrap paper available。' }
+                                    ]
+                                },
+                                {
+                                    type: 'tfng', id: 'RG_S3_TF', text: 'Questions 35-40: Do the statements agree with the text? (TRUE / FALSE / NOT GIVEN)',
+                                    subQuestions: [
+                                        { id: 'RG_35', text: '35. The Post-it Note was intentionally invented as an office supply.', answer: 'FALSE', explanation: '第一段說是 the result of a scientific failure (科學失敗的結果，意外發明)。' },
+                                        { id: 'RG_36', text: '36. Silver\'s adhesive would leave a sticky residue on the paper when removed.', answer: 'FALSE', explanation: '第一段指出 peeled off without leaving any residue (不留殘膠)。' },
+                                        { id: 'RG_37', text: '37. Arthur Fry attended a seminar given by Dr. Spencer Silver.', answer: 'TRUE', explanation: '第二段提到 Remembering Silver\'s seminar about the weak adhesive。' },
+                                        { id: 'RG_38', text: '38. Fry sold his first handmade bookmarks to his church choir members.', answer: 'NOT GIVEN', explanation: '文章沒有提到他把書籤賣給合唱團成員。' },
+                                        { id: 'RG_39', text: '39. 3M realized the product was best marketed as a communication tool.', answer: 'TRUE', explanation: '第三段說明 Realizing the product was fundamentally a communication tool... 3M launched the product。' },
+                                        { id: 'RG_40', text: '40. Post-it Notes are currently manufactured in over 100 countries.', answer: 'NOT GIVEN', explanation: '文章說是 sold (銷售) 在 100 多個國家，沒有說是 manufactured (製造) 在 100 多國。' }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            writing: {
+                academic: {
+                    instruction: "測驗時間：60分鐘。需完成二篇作文。Task 1 為「圖表練習」(20分鐘/150字)；Task 2 為「申論題」(40分鐘/250字)。",
+                    task1: {
+                        prompt: "The bar chart below shows the percentage of commuters using different modes of transport (Car, Bus, Train, Bicycle) in three cities (City A, City B, and City C) in the year 2023. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+                        hasData: true,
+                        chartType: 'bar',
+                        chartData: {
+                            labels: ['Car', 'Bus', 'Train', 'Bicycle'],
+                            datasets: [
+                                { label: 'City A (%)', data: [45, 25, 20, 10], backgroundColor: '#3b82f6' },
+                                { label: 'City B (%)', data: [30, 35, 25, 10], backgroundColor: '#10b981' },
+                                { label: 'City C (%)', data: [15, 20, 40, 25], backgroundColor: '#f59e0b' }
+                            ]
+                        },
+                        chartOptions: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: { display: true, text: 'Modes of Transport Used by Commuters in Three Cities (2023)', font: { size: 16 } },
+                                legend: { position: 'bottom' }
+                            },
+                            scales: { y: { beginAtZero: true, max: 50, title: { display: true, text: 'Percentage (%)' } } }
+                        },
+                        dataPoints: [
+                            "City A: Car (45%), Bus (25%), Train (20%), Bicycle (10%)",
+                            "City B: Car (30%), Bus (35%), Train (25%), Bicycle (10%)",
+                            "City C: Car (15%), Bus (20%), Train (40%), Bicycle (25%)"
+                        ],
+                        sample: `The provided bar chart compares the proportion of commuters utilizing four distinct modes of transportation—cars, buses, trains, and bicycles—across three different cities (A, B, and C) in the year 2023.<br><br>
+                        Overall, it is clear that transport preferences varied significantly between the cities. City A was heavily reliant on private cars, City B favored buses, while City C demonstrated a strong preference for public rail transport and possessed the highest rate of cycling among the three.<br><br>
+                        In City A, cars were the dominant mode of transport, accounting for nearly half (45%) of all commuters. This was significantly higher than bus and train usage, at 25% and 20% respectively, with cycling being the least popular at just 10%. Conversely, in City B, the bus was the most frequently used transport method at 35%, followed closely by cars (30%) and trains (25%), while cycling mirrored City A at a mere 10%.<br><br>
+                        City C presented a starkly different pattern. Train travel was the preferred choice by a substantial margin, capturing 40% of the commuters. Furthermore, City C recorded the highest proportion of cyclists (25%), which was two and a half times greater than the other cities. In contrast, car usage in City C was the lowest overall, standing at only 15%, while bus usage accounted for a fifth (20%) of the commuting population.<br><br>
+                        <strong class="text-blue-800">考官評語 (Band 8.0)：</strong>精準的 Overview，清楚總結了三個城市的特色差異。文章充分利用了比較級與比例代換辭彙 (nearly half, mirrored, two and a half times greater, a fifth)，展現了極強的數據描寫能力。`
+                    },
+                    task2: {
+                        prompt: "Some people think that all public museums and art galleries should be free for anyone to visit. Others believe that they should charge an entrance fee to help cover their costs.<br><br>Discuss both views and give your own opinion.",
+                        sample: `The funding and accessibility of cultural institutions, such as public museums and art galleries, is a subject of ongoing debate. While some argue that these venues should implement entrance fees to ensure financial sustainability, others contend that they must remain entirely free to guarantee equal access to education and culture. In my opinion, while financial pressures are valid, the immense societal benefits of free cultural access justify government subsidization to abolish entrance fees.<br><br>
+                        Proponents of charging admission fees argue from a standpoint of economic pragmatism. Maintaining large museums and acquiring new artworks requires substantial capital. Revenue generated from ticket sales can be directly reinvested into building maintenance, staff salaries, and the curation of high-quality exhibitions. Without this income stream, institutions might face budget deficits, leading to a decline in the quality of exhibits and potentially forcing closures. Furthermore, they argue that people tend to value and respect experiences more when they have paid for them, potentially reducing vandalism and overcrowding.<br><br>
+                        Conversely, the primary argument for free admission centers on social equality and education. Museums are repositories of a nation’s heritage and global history. By charging an entrance fee, authorities inadvertently create a financial barrier, effectively excluding lower-income families and marginalized communities from invaluable educational resources. Art and history should not be luxuries reserved only for the affluent. Free access encourages spontaneous visits, fosters a lifelong appreciation for culture among children, and promotes a more informed and cohesive society.<br><br>
+                        From my perspective, the cultural enrichment of the populace is a fundamental public good, much like basic education or public parks. Therefore, it is the responsibility of the state to fund these institutions through taxation. If total subsidization is unfeasible, a compromise could be implemented, such as offering free entry to permanent collections while charging for specialized, temporary exhibitions.<br><br>
+                        In conclusion, although the financial maintenance of museums is a significant challenge, instituting mandatory entrance fees restricts cultural access based on wealth. Public museums and galleries should remain universally free to serve their true purpose of educating and uniting society.<br><br>
+                        <strong class="text-blue-800">考官評語 (Band 8.0)：</strong>文章具備極高的連貫性 (Cohesion)，雙方觀點探討深入。單字使用精準且自然 (economic pragmatism, repositories, inadvertently create a financial barrier, affluent)，結論明確，完全符合高分標準。`
+                    }
+                },
+                general: {
+                    instruction: "測驗時間：60分鐘。Task 1 為「書信撰寫」(至少150字)；Task 2 為「申論題」(250字)。",
+                    task1: {
+                        prompt: "<strong>You have a neighbor whose dog barks loudly all day while they are at work, causing a lot of disturbance.</strong><br><br>Write a letter to your neighbor. In your letter:<br>- Explain the problem<br>- Describe how it is affecting you<br>- Suggest what they could do about it",
+                        hasData: false,
+                        sample: `Dear Mr. Henderson,<br><br>
+                        I hope you are doing well.<br><br>
+                        I am writing to you regarding a matter that has been causing some concern recently. I live next door to you at number 14, and over the past two weeks, your dog has been barking incessantly throughout the day while you are out at work.<br><br>
+                        While I completely understand that dogs occasionally bark, the noise has become quite excessive and usually continues non-stop from 9 AM until you return in the evening. Because I currently work from home, the constant loud noise is making it nearly impossible for me to concentrate on my tasks or conduct online meetings with my clients. It is also causing me a great deal of stress and headaches.<br><br>
+                        I suspect your dog might be suffering from separation anxiety when left alone for long periods. Perhaps you could consider leaving a radio or television on at a low volume to keep him company during the day? Alternatively, it might be worth hiring a dog walker to take him out for an hour in the afternoon to burn off some energy.<br><br>
+                        I would be very grateful if you could look into this matter.<br><br>Best regards,<br>Emily Jenkins<br><br>
+                        <strong class="text-blue-800">考官評語 (Band 8.0)：</strong>語氣適宜 (Semi-formal to formal)，雖然是抱怨信但態度禮貌。問題描述清晰，且提出了具體且有建設性的建議 (separation anxiety, dog walker)，符合題目所有要求。`
+                    },
+                    task2: {
+                        prompt: "Some people think that children should learn how to cook at school, while others think it is the parents' responsibility to teach them at home.<br><br>Discuss both views and give your own opinion.",
+                        sample: `The acquisition of culinary skills is a fundamental aspect of independent living. However, opinions diverge on whether cooking should be formally taught within the school curriculum or imparted by parents at home. While the home environment offers a personalized learning experience, I firmly believe that mandatory cooking classes in schools are essential to ensure all children learn this vital life skill.<br><br>
+                        Those who argue that teaching cooking is a parental responsibility emphasize the familial and cultural aspects of food. The kitchen is traditionally a space where family bonds are strengthened, and recipes passed down through generations carry significant cultural heritage. By teaching children to cook at home, parents can tailor lessons to their child’s specific dietary needs and family traditions. Furthermore, opponents of school-based cooking classes often argue that the school curriculum is already overburdened with core academic subjects like mathematics and science, and adding domestic skills would detract from these essential disciplines.<br><br>
+                        Conversely, advocates for incorporating cooking into education argue that relying solely on parents is inherently flawed. In modern society, many parents work long hours and increasingly rely on convenient, highly processed ready-meals. Consequently, they may lack the time, or even the skills themselves, to teach their children how to prepare nutritious food from scratch. By making cooking a compulsory subject at school, the education system guarantees that every child, regardless of their socioeconomic background, learns the basics of nutrition, food safety, and healthy meal preparation. This is a crucial public health measure in combatting the rising global epidemic of childhood obesity.<br><br>
+                        From my perspective, while home-cooking experiences are valuable, school intervention is necessary to provide a standardized baseline of nutritional education. Schools have the facilities and structured environment to teach cooking safely and scientifically.<br><br>
+                        In conclusion, although parents play a role in shaping their children's culinary habits, schools must take the primary responsibility for teaching cooking. Doing so equips the younger generation with the practical knowledge required to maintain a healthy lifestyle in adulthood.<br><br>
+                        <strong class="text-blue-800">考官評語 (Band 8.0)：</strong>這是一篇極佳的教育類申論題。論述合理，指出了現代家長缺乏時間的痛點。詞彙運用精準 (acquisition of culinary skills, core academic subjects, ready-meals, global epidemic of childhood obesity)。`
+                    }
+                }
+            }
+        };
+
+        /* ================= 初始化與 UI 控制 ================= */
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            renderListening();
+            renderReading();
+            renderWriting();
+            startTimer();
+
+            // 字數統計綁定
+            document.getElementById('task1-input').addEventListener('input', function() {
+                countWords(this.value, 'task1-word-count');
+            });
+            document.getElementById('task2-input').addEventListener('input', function() {
+                countWords(this.value, 'task2-word-count');
+            });
+        });
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('active', 'border-blue-500', 'text-blue-600');
+                el.classList.add('border-transparent', 'text-gray-500');
+            });
+
+            document.getElementById(`content-${tabName}`).classList.add('active');
+            const activeTab = document.getElementById(`tab-${tabName}`);
+            activeTab.classList.remove('border-transparent', 'text-gray-500');
+            activeTab.classList.add('active', 'border-blue-500', 'text-blue-600');
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            
+            const btnAcademic = document.getElementById('mode-academic');
+            const btnGeneral = document.getElementById('mode-general');
+            
+            if (mode === 'academic') {
+                btnAcademic.className = 'px-4 py-1.5 rounded-md bg-white shadow text-sm font-bold text-blue-800 transition';
+                btnGeneral.className = 'px-4 py-1.5 rounded-md text-sm font-bold text-gray-500 hover:text-gray-800 transition';
+            } else {
+                btnGeneral.className = 'px-4 py-1.5 rounded-md bg-white shadow text-sm font-bold text-blue-800 transition';
+                btnAcademic.className = 'px-4 py-1.5 rounded-md text-sm font-bold text-gray-500 hover:text-gray-800 transition';
+            }
+
+            // 重新渲染內容
+            renderReading();
+            renderWriting();
+            
+            // 隱藏可能已經開啟的成績或範文
+            document.getElementById('task1-sample').classList.add('hidden');
+            document.getElementById('task2-sample').classList.add('hidden');
+            const writingScoreDisplay = document.getElementById('writing-score-display');
+            if(writingScoreDisplay) writingScoreDisplay.classList.add('hidden');
+        }
+
+        // 計時器邏輯 
+        let timeLeft = 150 * 60; 
+        function startTimer() {
+            const timerEl = document.getElementById('timer');
+            timerInterval = setInterval(() => {
+                if(timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    gradeAll(); // 時間到自動全卷結算
+                    return;
+                }
+                timeLeft--;
+                const h = Math.floor(timeLeft / 3600);
+                const m = Math.floor((timeLeft % 3600) / 60);
+                const s = timeLeft % 60;
+                timerEl.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function countWords(text, displayId) {
+            const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+            document.getElementById(displayId).textContent = words.length;
+        }
+
+        /* ================= 語音播放 (TTS) ================= */
+        let engVoices = [];
+        function loadVoices() {
+            engVoices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+        }
+        if ('speechSynthesis' in window) {
+            loadVoices();
+            if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                window.speechSynthesis.onvoiceschanged = loadVoices;
+            }
+        }
+
+        const voiceProfiles = {
+            'Agent':        { pitch: 1.1, rate: 0.95, gender: 'male' },   
+            'Customer':     { pitch: 1.4, rate: 0.92, gender: 'female' }, 
+            'Guide':        { pitch: 1.2, rate: 0.94, gender: 'female' }, 
+            'John':         { pitch: 0.9, rate: 0.95, gender: 'male' },   
+            'Lisa':         { pitch: 1.4, rate: 0.95, gender: 'female' }, 
+            'Dr. Green':    { pitch: 0.7, rate: 0.85, gender: 'male' },   
+            'Professor':    { pitch: 0.8, rate: 0.88, gender: 'male' }    
+        };
+
+        function getVoiceForProfile(profile) {
+            if (!engVoices || engVoices.length === 0) return null;
+            let gbVoices = engVoices.filter(v => v.lang === 'en-GB');
+            let pool = gbVoices.length > 0 ? gbVoices : engVoices;
+            
+            if (profile.gender === 'female') {
+                return pool.find(v => v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('woman')) || pool[0];
+            } else if (profile.gender === 'male') {
+                return pool.find(v => v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('man')) || pool[pool.length - 1];
+            }
+            return pool[0];
+        }
+
+        function parseDialogue(htmlContent) {
+            let tmp = document.createElement("div");
+            tmp.innerHTML = htmlContent;
+            
+            let dialogues = [];
+            let currentSpeaker = "Narrator";
+            let currentText = "";
+
+            tmp.childNodes.forEach(node => {
+                if (node.nodeName === 'STRONG' && node.textContent.trim().endsWith(':')) {
+                    if (currentText.trim()) {
+                        dialogues.push({ speaker: currentSpeaker, text: currentText.trim() });
+                    }
+                    currentSpeaker = node.textContent.replace(':', '').trim();
+                    currentText = "";
+                } else if (node.nodeName === 'BR') {
+                    currentText += " ";
+                } else {
+                    currentText += node.textContent || "";
+                }
+            });
+            
+            if (currentText.trim()) {
+                dialogues.push({ speaker: currentSpeaker, text: currentText.trim() });
+            }
+            
+            return dialogues;
+        }
+
+        function playAudio(elementId) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); 
+                
+                const htmlContent = document.getElementById(elementId).innerHTML;
+                const dialogues = parseDialogue(htmlContent); 
+                
+                dialogues.forEach(line => {
+                    let utterance = new SpeechSynthesisUtterance(line.text);
+                    let profile = voiceProfiles[line.speaker] || { pitch: 1.0, rate: 0.9, gender: 'female' };
+                    
+                    utterance.lang = 'en-GB';
+                    utterance.pitch = profile.pitch;
+                    utterance.rate = profile.rate;
+                    
+                    let voice = getVoiceForProfile(profile);
+                    if (voice) utterance.voice = voice;
+                    
+                    window.speechSynthesis.speak(utterance);
+                });
+
+            } else {
+                alert("您的瀏覽器不支援語音朗讀功能，請直接顯示逐字稿觀看。");
+            }
+        }
+
+        function stopAudio() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        function toggleTranscript(elementId) {
+            const el = document.getElementById(elementId);
+            el.classList.toggle('hidden');
+        }
+
+        /* ================= 渲染內容 ================= */
+        
+        let task1ChartInstance = null;
+
+        function renderListening() {
+            const container = document.getElementById('listening-sections');
+            let html = '';
+
+            ieltsData.listening.sections.forEach((section, index) => {
+                html += `
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-2xl font-bold mb-2 text-gray-900">${section.title}</h2>
+                    <p class="text-gray-600 mb-4 italic">${section.instruction}</p>
+                    
+                    <div class="bg-gray-100 p-4 rounded-lg mb-6 border border-gray-300">
+                        <div class="flex flex-wrap items-center gap-3 mb-2">
+                            <button onclick="playAudio('raw-transcript-${index}')" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-bold flex items-center shadow-sm transition">
+                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                                播放音檔 (Play Audio)
+                            </button>
+                            <button onclick="stopAudio()" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg font-bold flex items-center shadow-sm transition">
+                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"></path></svg>
+                                停止 (Stop)
+                            </button>
+                            <button onclick="toggleTranscript('transcript-text-${index}')" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg font-medium flex items-center ml-auto transition">
+                                👁️ 顯示/隱藏逐字稿
+                            </button>
+                        </div>
+                        
+                        <div id="raw-transcript-${index}" class="hidden">${section.transcript}</div>
+                        <div id="transcript-text-${index}" class="hidden mt-4 pt-4 border-t border-gray-300 max-h-48 overflow-y-auto font-serif text-base leading-relaxed">
+                            ${section.transcript}
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-6">
+                `;
+
+                section.questions.forEach((q) => {
+                    if (q.type === 'mcq') {
+                        html += `
+                        <div class="mb-4" id="container-${q.id}">
+                            <p class="font-bold text-lg mb-3">${q.text}</p>
+                            <div class="space-y-2 pl-4">
+                                ${q.options.map((opt, i) => {
+                                    const letter = String.fromCharCode(65 + i);
+                                    return `
+                                    <label class="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded transition border border-transparent hover:border-gray-200">
+                                        <input type="radio" name="${q.id}" value="${letter}" class="form-radio h-5 w-5 text-blue-600">
+                                        <span class="text-gray-700 text-lg">${opt}</span>
+                                    </label>`
+                                }).join('')}
+                            </div>
+                            <div id="exp-${q.id}" class="hidden mt-4 text-base p-4 rounded bg-gray-50 border-l-4 shadow-sm"></div>
+                        </div>`;
+                    } else if (q.type === 'matching') {
+                        html += `
+                        <div class="mb-4 bg-gray-50 p-5 rounded-lg border border-gray-200">
+                            <p class="font-bold text-lg mb-4">${q.text}</p>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                ${q.options.map(opt => `<span class="bg-white border border-gray-300 px-3 py-1 rounded text-sm font-medium shadow-sm">${opt}</span>`).join('')}
+                            </div>
+                            <div class="space-y-4">
+                                ${q.subQuestions.map(sq => `
+                                    <div class="flex items-center space-x-4" id="container-${sq.id}">
+                                        <p class="w-2/3 text-gray-800 text-lg">${sq.text}</p>
+                                        <select id="${sq.id}" class="w-1/3 form-select block p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-base">
+                                            <option value="">Select...</option>
+                                            ${q.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                    <div id="exp-${sq.id}" class="hidden mb-4 text-base p-4 rounded bg-white border-l-4 shadow-sm"></div>
+                                `).join('')}
+                            </div>
+                        </div>`;
+                    } else if (q.type === 'fill') {
+                        html += `
+                        <div class="mb-4 bg-blue-50 p-5 rounded-lg border border-blue-100">
+                            <p class="font-bold text-lg mb-4 text-blue-900">${q.text}</p>
+                            <div class="space-y-4">
+                                ${q.subQuestions.map(sq => `
+                                    <div class="text-lg" id="container-${sq.id}">
+                                        ${sq.prefix} 
+                                        <input type="text" id="${sq.id}" class="mx-2 p-1 border-b-2 border-gray-500 bg-white focus:outline-none focus:border-blue-600 text-center w-40 font-bold text-blue-800 shadow-inner rounded-sm" placeholder="your answer"> 
+                                        ${sq.suffix}
+                                    </div>
+                                    <div id="exp-${sq.id}" class="hidden mb-4 text-base p-4 rounded bg-white border-l-4 shadow-sm"></div>
+                                `).join('')}
+                            </div>
+                        </div>`;
+                    }
+                });
+
+                html += `</div></div>`;
+            });
+
+            // 聽力區塊底部加入導航按鈕
+            html += `
+            <div class="mt-8 pt-6 border-t border-gray-200 flex justify-center pb-8">
+                <button onclick="switchTab('reading')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-12 rounded-lg shadow-lg transition duration-200 text-xl w-full max-w-lg flex items-center justify-center">
+                    前往閱讀測驗 (Next: Reading) <svg class="w-6 h-6 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </div>
+            `;
+            container.innerHTML = html;
+        }
+
+        function renderReading() {
+            const data = ieltsData.reading[currentMode];
+            
+            document.getElementById('reading-mode-label').textContent = currentMode === 'academic' ? 'Academic 學術組' : 'General 移民組';
+            document.getElementById('reading-instruction-text').textContent = data.instruction;
+
+            const passageContainer = document.getElementById('reading-passage');
+            const qContainer = document.getElementById('reading-questions');
+            
+            let passagesHtml = '';
+            let questionsHtml = '';
+
+            data.passages.forEach((passage, pIndex) => {
+                passagesHtml += `
+                <div class="mb-12 pb-8 border-b-2 border-gray-300">
+                    <h2 class="text-3xl font-bold mb-6 font-serif text-gray-900 leading-tight">${passage.title}</h2>
+                    <div class="prose max-w-none font-serif text-gray-800 leading-loose text-justify text-lg">
+                        ${passage.passage}
+                    </div>
+                </div>`;
+
+                questionsHtml += `<h4 class="text-2xl font-bold text-blue-800 mt-10 mb-6 border-b-2 border-blue-200 pb-2">${passage.title} - Questions</h4>`;
+                
+                passage.questions.forEach((q) => {
+                    if (q.type === 'tfng') {
+                        questionsHtml += `
+                        <div class="mb-6 bg-gray-50 p-5 rounded-lg border border-gray-200 shadow-sm">
+                            <p class="font-bold text-lg mb-4">${q.text}</p>
+                            <div class="space-y-4">
+                                ${q.subQuestions.map(sq => `
+                                    <div class="pb-4 border-b border-gray-200 last:border-0 last:pb-0" id="container-${sq.id}">
+                                        <p class="font-medium text-gray-800 text-lg mb-3">${sq.text}</p>
+                                        <div class="flex space-x-6">
+                                            ${['TRUE', 'FALSE', 'NOT GIVEN', 'YES', 'NO'].map(opt => `
+                                                <label class="flex items-center space-x-2 cursor-pointer">
+                                                    <input type="radio" name="${sq.id}" value="${opt}" class="form-radio h-5 w-5 text-blue-600">
+                                                    <span class="text-base font-medium">${opt}</span>
+                                                </label>
+                                            `).join('')}
+                                        </div>
+                                        <div id="exp-${sq.id}" class="hidden mt-3 text-base p-3 rounded bg-white border-l-4 shadow-sm"></div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>`;
+                    } else if (q.type === 'mcq') {
+                        questionsHtml += `
+                        <div class="mb-6 bg-gray-50 p-5 rounded-lg border border-gray-200 shadow-sm">
+                            <p class="font-bold text-lg mb-4">${q.text}</p>
+                            <div class="space-y-4">
+                                ${q.subQuestions.map(sq => `
+                                    <div class="pb-4 border-b border-gray-200 last:border-0 last:pb-0" id="container-${sq.id}">
+                                        <p class="font-medium text-gray-800 text-lg mb-3">${sq.text}</p>
+                                        <div class="space-y-2 pl-4">
+                                            ${sq.options.map((opt, i) => {
+                                                const letter = String.fromCharCode(65 + i);
+                                                return `
+                                                <label class="flex items-center space-x-3 cursor-pointer hover:bg-white p-2 rounded transition">
+                                                    <input type="radio" name="${sq.id}" value="${letter}" class="form-radio h-5 w-5 text-blue-600">
+                                                    <span class="text-gray-700 text-lg">${opt}</span>
+                                                </label>`
+                                            }).join('')}
+                                        </div>
+                                        <div id="exp-${sq.id}" class="hidden mt-3 text-base p-3 rounded bg-white border-l-4 shadow-sm"></div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>`;
+                    } else if (q.type === 'matching') {
+                        questionsHtml += `
+                        <div class="mb-6 bg-gray-50 p-5 rounded-lg border border-gray-200 shadow-sm">
+                            <p class="font-bold text-lg mb-4">${q.text}</p>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                ${q.options.map(opt => `<span class="bg-white border border-gray-300 px-3 py-1 rounded text-sm font-medium shadow-sm">${opt}</span>`).join('')}
+                            </div>
+                            <div class="space-y-4">
+                                ${q.subQuestions.map(sq => `
+                                    <div class="flex items-center space-x-4" id="container-${sq.id}">
+                                        <p class="w-2/3 text-gray-800 text-lg">${sq.text}</p>
+                                        <select id="${sq.id}" class="w-1/3 form-select block p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-base shadow-inner">
+                                            <option value="">Select...</option>
+                                            ${q.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                    <div id="exp-${sq.id}" class="hidden mb-4 text-base p-4 rounded bg-white border-l-4 shadow-sm"></div>
+                                `).join('')}
+                            </div>
+                        </div>`;
+                    } else if (q.type === 'fill') {
+                        questionsHtml += `
+                        <div class="mb-6 bg-blue-50 p-5 rounded-lg border border-blue-200 shadow-sm">
+                            <p class="font-bold text-lg mb-4 text-blue-900">${q.text}</p>
+                            <div class="space-y-5">
+                                ${q.subQuestions.map(sq => `
+                                    <div class="text-lg leading-loose" id="container-${sq.id}">
+                                        ${sq.prefix} 
+                                        <input type="text" id="${sq.id}" class="mx-2 p-1 border-b-2 border-gray-500 bg-white focus:outline-none focus:border-blue-600 text-center w-40 font-bold text-blue-800 shadow-inner rounded-sm" placeholder="your answer"> 
+                                        ${sq.suffix}
+                                    </div>
+                                    <div id="exp-${sq.id}" class="hidden mt-2 mb-4 text-base p-4 rounded bg-white border-l-4 shadow-sm"></div>
+                                `).join('')}
+                            </div>
+                        </div>`;
+                    }
+                });
+            });
+
+            // 閱讀區塊底部加入導航按鈕
+            questionsHtml += `
+            <div class="mt-10 pt-6 border-t border-gray-200 flex justify-center pb-8">
+                <button onclick="switchTab('writing')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-12 rounded-lg shadow-lg transition duration-200 text-xl w-full flex items-center justify-center">
+                    前往寫作測驗 (Next: Writing) <svg class="w-6 h-6 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </div>
+            `;
+
+            passageContainer.innerHTML = passagesHtml;
+            qContainer.innerHTML = questionsHtml;
+        }
+
+        function renderWriting() {
+            const data = ieltsData.writing[currentMode];
+            
+            document.getElementById('writing-mode-label').textContent = currentMode === 'academic' ? 'Academic 學術組' : 'General 移民組';
+            document.getElementById('writing-instruction-text').textContent = data.instruction;
+
+            // Task 1
+            document.getElementById('writing-task1-prompt').innerHTML = data.task1.prompt;
+            const dataContainer = document.getElementById('writing-task1-data-container');
+            if (data.task1.hasData) {
+                dataContainer.classList.remove('hidden');
+                
+                if (data.task1.chartType) {
+                    document.getElementById('writing-task1-data').classList.add('hidden');
+                    document.getElementById('task1-chart').classList.remove('hidden');
+                    
+                    if (task1ChartInstance) {
+                        task1ChartInstance.destroy();
+                    }
+                    
+                    const ctx = document.getElementById('task1-chart').getContext('2d');
+                    task1ChartInstance = new Chart(ctx, {
+                        type: data.task1.chartType,
+                        data: data.task1.chartData,
+                        options: data.task1.chartOptions
+                    });
+                } else {
+                    document.getElementById('writing-task1-data').classList.remove('hidden');
+                    document.getElementById('task1-chart').classList.add('hidden');
+                    document.getElementById('writing-task1-data').innerHTML = data.task1.dataPoints.map(d => `<li>${d}</li>`).join('');
+                }
+            } else {
+                dataContainer.classList.add('hidden');
+            }
+            document.getElementById('task1-sample').innerHTML = data.task1.sample;
+
+            // Task 2
+            document.getElementById('writing-task2-prompt').innerHTML = data.task2.prompt;
+            document.getElementById('task2-sample').innerHTML = data.task2.sample;
+            
+            // 清空輸入框
+            document.getElementById('task1-input').value = '';
+            document.getElementById('task2-input').value = '';
+            document.getElementById('task1-word-count').textContent = '0';
+            document.getElementById('task2-word-count').textContent = '0';
+        }
+
+        /* ================= 全卷統一評分邏輯 (Grade All) ================= */
+
+        // 依據雅思官方 40 題對照表計算 Band Score
+        function calculateBand(score, type, mode = 'academic') {
+            if (score === 0) return 0.0; 
+            
+            if (type === 'listening' || (type === 'reading' && mode === 'academic')) {
+                if (score >= 39) return 9.0;
+                if (score >= 37) return 8.5;
+                if (score >= 35) return 8.0;
+                if (score >= 33) return 7.5;
+                if (score >= 30) return 7.0;
+                if (score >= 27) return 6.5;
+                if (score >= 23) return 6.0;
+                if (score >= 20) return 5.5;
+                if (score >= 16) return 5.0;
+                if (score >= 13) return 4.5;
+                if (score >= 10) return 4.0;
+                if (score >= 6) return 3.5;
+                if (score >= 4) return 3.0;
+                if (score === 3) return 2.5;
+                if (score === 2) return 2.0;
+                if (score === 1) return 1.0;
+            } 
+            else if (type === 'reading' && mode === 'general') {
+                if (score === 40) return 9.0;
+                if (score === 39) return 8.5;
+                if (score === 38) return 8.0;
+                if (score >= 36) return 7.5;
+                if (score >= 34) return 7.0;
+                if (score >= 32) return 6.5;
+                if (score >= 30) return 6.0;
+                if (score >= 26) return 5.5;
+                if (score >= 23) return 5.0;
+                if (score >= 19) return 4.5;
+                if (score >= 15) return 4.0;
+                if (score >= 12) return 3.5;
+                if (score >= 8) return 3.0;
+                if (score >= 5) return 2.5;
+                if (score >= 2) return 2.0;
+                if (score === 1) return 1.0;
+            }
+            return 0.0;
+        }
+
+        function showFeedback(id, isCorrect, correctAnswer, explanation) {
+            const expDiv = document.getElementById(`exp-${id}`);
+            if (!expDiv) return;
+
+            expDiv.classList.remove('hidden');
+            if (isCorrect) {
+                expDiv.classList.add('correct-answer');
+                expDiv.classList.remove('wrong-answer');
+                expDiv.innerHTML = `<strong class="text-green-700 text-lg">✅ Correct!</strong><br><span class="text-gray-800 mt-2 block">${explanation}</span>`;
+            } else {
+                expDiv.classList.add('wrong-answer');
+                expDiv.classList.remove('correct-answer');
+                expDiv.innerHTML = `<strong class="text-red-700 text-lg">❌ Incorrect. The correct answer is: ${correctAnswer}</strong><br><span class="text-gray-800 mt-2 block">${explanation}</span>`;
+            }
+        }
+
+        function gradeListeningLogic() {
+            let score = 0;
+            ieltsData.listening.sections.forEach(sec => {
+                sec.questions.forEach(q => {
+                    if (q.type === 'mcq') {
+                        const selected = document.querySelector(`input[name="${q.id}"]:checked`);
+                        const val = selected ? selected.value : null;
+                        const isCorrect = val === q.answer;
+                        if (isCorrect) score++;
+                        showFeedback(q.id, isCorrect, q.answer, q.explanation);
+                    } else if (q.type === 'matching' || q.type === 'fill') {
+                        q.subQuestions.forEach(sq => {
+                            const inputEl = document.getElementById(sq.id);
+                            if (!inputEl) return;
+                            const val = inputEl.value.trim().toLowerCase();
+                            const ans = sq.answer.toLowerCase();
+                            const isCorrect = val === ans;
+                            if (isCorrect) score++;
+                            
+                            if (q.type === 'fill') {
+                                inputEl.classList.remove('text-blue-800', 'border-gray-500');
+                                if (isCorrect) {
+                                    inputEl.classList.add('text-green-600', 'border-green-500');
+                                } else {
+                                    inputEl.classList.add('text-red-600', 'border-red-500');
+                                }
+                            }
+                            showFeedback(sq.id, isCorrect, sq.answer, sq.explanation);
+                        });
+                    }
+                });
+            });
+            window.testScores.listening = calculateBand(score, 'listening');
+        }
+
+        function gradeReadingLogic() {
+            let score = 0;
+            const data = ieltsData.reading[currentMode];
+
+            data.passages.forEach(passage => {
+                passage.questions.forEach(q => {
+                    q.subQuestions.forEach(sq => {
+                        let isCorrect = false;
+                        
+                        if (q.type === 'tfng' || q.type === 'mcq') {
+                            const selected = document.querySelector(`input[name="${sq.id}"]:checked`);
+                            const val = selected ? selected.value : null;
+                            isCorrect = val === sq.answer;
+                        } else if (q.type === 'fill' || q.type === 'matching') {
+                            const el = document.getElementById(sq.id);
+                            if (!el) return;
+                            const val = el.value.trim().toLowerCase();
+                            const ans = sq.answer.toLowerCase();
+                            isCorrect = val === ans;
+                            
+                            if (q.type === 'fill') {
+                                el.classList.remove('text-blue-800', 'border-gray-500');
+                                if (isCorrect) {
+                                    el.classList.add('text-green-600', 'border-green-500');
+                                } else {
+                                    el.classList.add('text-red-600', 'border-red-500');
+                                }
+                            }
+                        }
+                        showFeedback(sq.id, isCorrect, sq.answer, sq.explanation);
+                    });
+                });
+            });
+            window.testScores.reading = calculateBand(score, 'reading', currentMode);
+        }
+
+        function evaluateEssay(text, taskType) {
+            if (!text || !text.trim()) return { score: 0.0, feedback: "未作答 (No answer provided)" };
+
+            let words = text.trim().split(/\s+/);
+            let wordCount = words.length;
+            
+            // 防呆機制：如果字數極低
+            if (wordCount < 10) {
+                return { score: 1.0, feedback: "字數極少，無法評估 (Insufficient words for assessment) (-4.0)" };
+            }
+            
+            let score = 5.0;
+            let feedback = [];
+
+            if (taskType === 1) {
+                if (wordCount < 100) { score -= 1.5; feedback.push("字數嚴重不足 (-1.5)"); }
+                else if (wordCount < 150) { score -= 0.5; feedback.push("未達 150 字最低要求 (-0.5)"); }
+                else if (wordCount >= 200) { score += 0.5; feedback.push("字數充裕且圖表細節發展完整 (+0.5)"); }
+                else { feedback.push("字數達最低標準 (+0)"); }
+            } else {
+                if (wordCount < 150) { score -= 1.5; feedback.push("字數嚴重不足 (-1.5)"); }
+                else if (wordCount < 250) { score -= 0.5; feedback.push("未達 250 字最低要求 (-0.5)"); }
+                else if (wordCount >= 320) { score += 0.5; feedback.push("字數充裕且論點發展充分 (+0.5)"); }
+                else { feedback.push("字數達最低標準 (+0)"); }
+            }
+
+            const advancedWords = ['furthermore', 'moreover', 'however', 'nevertheless', 'consequently', 'subsequently', 'undeniably', 'inevitably', 'significant', 'substantial', 'demonstrate', 'illustrate', 'conversely', 'profound', 'crucial', 'vital', 'essential', 'perspective', 'contend', 'assert', 'mitigate', 'detrimental', 'beneficial', 'advantageous', 'overall', 'in conclusion', 'to summarize', 'whereas', 'although', 'despite', 'therefore', 'thus', 'hence', 'indicate', 'suggest', 'imply', 'facilitate', 'hinder', 'exacerbate', 'ameliorate', 'predominantly', 'notably'];
+            let advancedCount = 0;
+            let lowerText = text.toLowerCase();
+            advancedWords.forEach(word => {
+                if (lowerText.includes(word)) advancedCount++;
+            });
+
+            if (advancedCount < 3) { score -= 0.5; feedback.push("缺乏進階學術與轉折詞彙 (-0.5)"); }
+            else if (advancedCount >= 6 && advancedCount < 10) { score += 0.5; feedback.push("使用了部分學術與轉折詞彙 (+0.5)"); }
+            else if (advancedCount >= 10 && advancedCount < 15) { score += 1.0; feedback.push("學術詞彙與轉折語氣運用良好 (+1.0)"); }
+            else if (advancedCount >= 15) { score += 1.5; feedback.push("連接詞與進階詞彙極其豐富 (+1.5)"); }
+            else { feedback.push("基礎詞彙運用尚可 (+0)"); }
+
+            let paragraphs = text.split(/\n+/).filter(p => p.trim().length > 0);
+            if (paragraphs.length < 2) {
+                score -= 1.0; feedback.push("文章完全沒有分段 (-1.0)");
+            } else if (paragraphs.length === 2) {
+                score -= 0.5; feedback.push("段落結構過於簡單 (-0.5)");
+            } else if (paragraphs.length >= 4 && paragraphs.length <= 6) {
+                score += 0.5; feedback.push("具備良好的多段落邏輯結構 (+0.5)");
+            } else {
+                feedback.push("具備基本分段 (+0)");
+            }
+
+            let sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+            if (sentences.length > 0) {
+                let avgSentenceLength = wordCount / sentences.length;
+                if (avgSentenceLength < 10) { score -= 0.5; feedback.push("句型過短，缺乏複合句 (-0.5)"); }
+                else if (avgSentenceLength > 16) { score += 0.5; feedback.push("句型長度與複雜句結構佳 (+0.5)"); }
+                else { feedback.push("句型長度適中 (+0)"); }
+            }
+
+            if (score > 8.0) score = 8.0;
+            if (score < 1.0) score = 1.0;
+            score = Math.round(score * 2) / 2;
+
+            return { score: score, feedback: feedback.join('、') };
+        }
+
+        function gradeWritingLogic() {
+            const task1Text = document.getElementById('task1-input').value;
+            const task2Text = document.getElementById('task2-input').value;
+
+            const task1Result = evaluateEssay(task1Text, 1);
+            const task2Result = evaluateEssay(task2Text, 2);
+
+            let overallScore = 0.0;
+            if (task1Result.score > 0 || task2Result.score > 0) {
+                const t1 = task1Result.score > 0 ? task1Result.score : 0;
+                const t2 = task2Result.score > 0 ? task2Result.score : 0;
+                overallScore = (t1 + t2 * 2) / 3;
+                overallScore = Math.round(overallScore * 2) / 2;
+            }
+            window.testScores.writing = overallScore;
+
+            // 展開範文
+            document.getElementById('task1-sample').classList.remove('hidden');
+            document.getElementById('task2-sample').classList.remove('hidden');
+
+            // 顯示寫作評分結果
+            const display = document.getElementById('writing-score-display');
+            display.innerHTML = `
+                <div class="space-y-5">
+                    <div class="border-b border-blue-200 pb-4">
+                        <span class="font-bold text-xl text-blue-900 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            Task 1 預估分數：${task1Result.score > 0 ? task1Result.score.toFixed(1) : '0.0 (未作答)'}
+                        </span>
+                        <p class="text-gray-700 mt-2 ml-8 leading-relaxed"><strong>📝 評分依據：</strong>${task1Result.feedback}</p>
+                    </div>
+                    <div class="border-b border-blue-200 pb-4">
+                        <span class="font-bold text-xl text-blue-900 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            Task 2 預估分數：${task2Result.score > 0 ? task2Result.score.toFixed(1) : '0.0 (未作答)'}
+                        </span>
+                        <p class="text-gray-700 mt-2 ml-8 leading-relaxed"><strong>📝 評分依據：</strong>${task2Result.feedback}</p>
+                    </div>
+                    <div class="pt-4 text-center">
+                        <span class="text-gray-800 text-2xl font-bold block">總結預估 Writing Band Score: <span class="text-blue-700 text-4xl ml-2">${overallScore.toFixed(1)}</span></span>
+                        <p class="text-red-600 text-sm mt-4 bg-red-50 p-3 rounded border border-red-200 inline-block text-left shadow-sm">
+                            <strong>⚠️ 嚴格評分模式已啟用：</strong>本系統採用雅思四大評分項目（Task Achievement, Coherence, Lexical Resource, Grammatical Range）進行推估。未作答或字數過少將直接判定為 0.0 ~ 1.0 分。
+                        </p>
+                    </div>
+                </div>
+            `;
+            display.classList.remove('hidden');
+            display.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // 統一把三科成績一起結算
+        function gradeAll() {
+            // ================= 防呆機制：檢查必填欄位 =================
+            const studentId = document.getElementById('student-id').value.trim();
+            const branch = document.getElementById('student-branch').value.trim();
+            const name = document.getElementById('student-name').value.trim();
+
+            if (!studentId || !branch || !name) {
+                alert("請先至畫面上方填寫完整的考生資訊（學員編號、分校、姓名）再提交試卷！");
+                
+                // 自動捲動到最上方並加上紅框提示
+                document.getElementById('student-info-bar').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (!studentId) document.getElementById('student-id').classList.add('ring-2', 'ring-red-500');
+                if (!branch) document.getElementById('student-branch').classList.add('ring-2', 'ring-red-500');
+                if (!name) document.getElementById('student-name').classList.add('ring-2', 'ring-red-500');
+                
+                // 3秒後移除紅框
+                setTimeout(() => {
+                    document.querySelectorAll('input').forEach(el => el.classList.remove('ring-2', 'ring-red-500'));
+                }, 3000);
+                
+                return; // 中斷結算程式，不會顯示成績
+            }
+
+            // 停止計時
+            if(timerInterval) clearInterval(timerInterval);
+            
+            // 計算三科分數並把 DOM 回饋塞入
+            gradeListeningLogic();
+            gradeReadingLogic();
+            gradeWritingLogic();
+
+            // 計算 Overall Band
+            let overall = (window.testScores.listening + window.testScores.reading + window.testScores.writing) / 3;
+            overall = Math.round(overall * 2) / 2;
+            window.testScores.overall = overall;
+
+            // 更新下方成績單看板
+            document.getElementById('summary-l').textContent = window.testScores.listening.toFixed(1);
+            document.getElementById('summary-r').textContent = window.testScores.reading.toFixed(1);
+            document.getElementById('summary-w').textContent = window.testScores.writing.toFixed(1);
+            document.getElementById('summary-overall').textContent = window.testScores.overall.toFixed(1);
+
+            const banner = document.getElementById('final-submission-banner');
+            banner.classList.remove('hidden', 'translate-y-full');
+            banner.classList.add('translate-y-0');
+
+            // 鎖定全卷提交按鈕防呆
+            const btn = document.getElementById('submit-all-btn');
+            btn.disabled = true;
+            btn.textContent = "✅ 已結算全卷成績";
+            btn.classList.add('cursor-not-allowed', 'opacity-75');
+            btn.classList.remove('hover:bg-blue-700');
+        }
+
+        /* ================= 發送成績至 Formspree ================= */
+        async function submitToFormspree() {
+            const studentId = document.getElementById('student-id').value.trim();
+            const branch = document.getElementById('student-branch').value.trim();
+            const name = document.getElementById('student-name').value.trim();
+            const msgEl = document.getElementById('submit-msg');
+            const btn = document.getElementById('submit-formspree-btn');
+
+            btn.disabled = true;
+            btn.textContent = "發送中...";
+            msgEl.classList.add('hidden');
+
+            const payload = {
+                "學員編號 (Student ID)": studentId,
+                "分校 (Branch)": branch,
+                "姓名 (Name)": name,
+                "聽力成績 (Listening)": window.testScores.listening,
+                "閱讀成績 (Reading)": window.testScores.reading,
+                "寫作成績 (Writing)": window.testScores.writing,
+                "雅思總級分 (Overall Band)": window.testScores.overall
+            };
+
+            try {
+                const response = await fetch("https://formspree.io/f/xreraowb", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    msgEl.textContent = "✅ 成績已成功寄出！";
+                    msgEl.classList.remove('hidden', 'text-yellow-300');
+                    msgEl.classList.add('text-green-400');
+                    btn.textContent = "已寄送";
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    throw new Error("Network response was not ok.");
+                }
+            } catch (error) {
+                console.error(error);
+                msgEl.textContent = "❌ 發送失敗，請檢查網路連線";
+                msgEl.classList.remove('hidden', 'text-green-400');
+                msgEl.classList.add('text-yellow-300');
+                btn.disabled = false;
+                btn.textContent = "重新寄送";
+            }
+        }
+    </script>
+</body>
+</html>
